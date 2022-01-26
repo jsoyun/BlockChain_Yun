@@ -1,7 +1,8 @@
-// import * as cryptojs from "crypto-js";
-import * as ecdsa from "elliptic";
-import * as _ from "lodash";
-import { getPublicKeyFromWallet } from "./r_encryption";
+Object.defineProperty(exports, "__esModule", { value: true });
+const CryptoJS = require("crypto-js");
+const ecdsa = require("elliptic");
+const _ = require("lodash");
+const { getPublicKeyFromWallet } = require("./r_encryption");
 
 const ec = new ecdsa.ec("secp256k1");
 
