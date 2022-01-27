@@ -319,7 +319,7 @@ function getAdjustDifficulty(lastBlock, blocks) {
   const expectedTime =
     BLOCK_GENERATION_INTERVAL * DIFFICULT_ADJUSTMENT_INTERVAL;
 
-  //생성시간 /2는 우리가 임의로 넣어두는 알고리즘임
+  //생성시간 /2는 우리가 임의로 넣어두는 알고리즘 임
   if (elapsedTime / 2 > expectedTime) {
     return preAdjustmentBlock.header.difficulty - 1;
   } else if (elapsedTime * 2 < expectedTime) {
@@ -339,7 +339,7 @@ function getCurrentTimestamp() {
 function isValidTimestamp(newBlock, prevBlock) {
   // console.log("뺀거:", newBlock.header.timestamp - prevBlock.header.timestamp);
   // console.log(getCurrentTimestamp());
-  //5초이내에 생성되는 걸 막음
+
   if (prevBlock.header.timestamp - 60 > newBlock.header.timestamp) {
     return false;
   }
