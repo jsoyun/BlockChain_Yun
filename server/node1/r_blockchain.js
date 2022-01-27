@@ -337,18 +337,22 @@ function getCurrentTimestamp() {
 
 //유효한 타임스탬프인지 보는 함수
 function isValidTimestamp(newBlock, prevBlock) {
-  // console.log("뺀거:", newBlock.header.timestamp - prevBlock.header.timestamp);
-  // console.log(getCurrentTimestamp());
+  // if (prevBlock.header.timestamp - 60 > newBlock.header.timestamp) {
+  //   return false;
+  // }
+  // //검증자의 시간과 새로운 블록의 시간과 비교! 검증자가 검증하는데
+  // //검증하는 시간이랑 만들어진 블록의 시간이 너무 차이가 나면 버림
+  // if (newBlock.header.timestamp - 60 > getCurrentTimestamp()) {
+  //   return false;
+  // }
+  // return true;
 
-  if (prevBlock.header.timestamp - 60 > newBlock.header.timestamp) {
-    return false;
-  }
-  //검증자의 시간과 새로운 블록의 시간과 비교! 검증자가 검증하는데
-  //검증하는 시간이랑 만들어진 블록의 시간이 너무 차이가 나면 버림
-  if (newBlock.header.timestamp - 60 > getCurrentTimestamp()) {
-    return false;
-  }
-  return true;
+  //naive코인처럼 하나로 묶어도 됨.
+  return (
+    prevBlock.header.timestamp - 60 < newBlock.header.timestamp &&
+    newBlock.header.timestamp - 60 < getCurrentTimestamp()
+  );
+  //두 조건다 통과되면 true 뱉어
 }
 
 function blockchainInit(YM) {

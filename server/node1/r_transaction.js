@@ -19,13 +19,7 @@ class UnspentTxOut {
 }
 
 //코인어디로부터 왔는지 정보
-class TxIn {
-  constructor(txOutId, txOutIndex, signature) {
-    (this.txOutId = txOutId),
-      (this.txOutIndex = txOutIndex),
-      (this.signature = signature);
-  }
-}
+class TxIn {}
 
 //아웃풋 주소와 코인양으로 구성됨
 class TxOut {
@@ -35,13 +29,7 @@ class TxOut {
   }
 }
 
-class Transaction {
-  constructor(id, txIns, txOuts) {
-    this.id = id;
-    this.txIns = txIns;
-    this.txOuts = txOuts;
-  }
-}
+class Transaction {}
 
 const getTransactionId = (transaction) => {
   const txInContent = transaction.txIns
