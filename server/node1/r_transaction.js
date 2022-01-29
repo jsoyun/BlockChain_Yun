@@ -18,6 +18,8 @@ class UnspentTxOut {
   }
 }
 
+let unspentTxOuts = [];
+
 //코인어디로부터 왔는지 정보
 class TxIn {}
 
@@ -31,6 +33,7 @@ class TxOut {
 
 class Transaction {}
 
+//트랜잭션 아이디 갖는 함수
 const getTransactionId = (transaction) => {
   const txInContent = transaction.txIns
     .map((txIn) => txIn.txOutId + txIn.txOutIndex)
@@ -178,6 +181,7 @@ const getCoinbaseTransaction = (address, blockIndex) => {
 
 exports.getCoinbaseTransaction = getCoinbaseTransaction;
 
+//트랜잭션 인풋에 서명하는 함수
 const signTxIn = (transaction, txInIndex, privateKey, aUnspentTxOuts) => {
   const txIn = transaction.txIns[txInIndex];
   const dataToSign = transaction.id;
@@ -199,8 +203,7 @@ const signTxIn = (transaction, txInIndex, privateKey, aUnspentTxOuts) => {
   return signature;
 };
 
-let unspentTxOuts = [];
-
+//새로운보내지지않는 트랜잭션 아웃풋들 함수
 const newUnspentTxOuts = newTransactions
   .map((t) => {
     return t.txOuts.map(
@@ -210,11 +213,13 @@ const newUnspentTxOuts = newTransactions
   })
   .reduce((a, b) => a.concat(b), []);
 
+//소비된트랜잭션아웃풋들 함수
 const consumedTxOuts = newTransactions
   .map((t) => t.txIns)
   .reduce((a, b) => a.concat(b), [])
   .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, "", 0));
 
+//결과적으로(?)보내지지않은트랜잭션아웃풋들 함수
 const resultingUnspentTxOuts = aUnspentTxOuts
   .filter(
     (uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)
