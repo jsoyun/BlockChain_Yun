@@ -34,42 +34,39 @@ class TxOut {
 class Transaction {}
 
 //트랜잭션 아이디 갖는 함수
+
 const getTransactionId = (transaction) => {
   const txInContent = transaction.txIns
     .map((txIn) => txIn.txOutId + txIn.txOutIndex)
-    //맵함수 돌고, 그결과물들을reduce한다
     .reduce((a, b) => a + b, "");
-
   const txOutContent = transaction.txOuts
     .map((txOut) => txOut.address + txOut.amount)
     .reduce((a, b) => a + b, "");
-
   return CryptoJS.SHA256(txInContent + txOutContent).toString();
 };
 
 const validateTransaction = (transaction, aUnspentTxOuts) => {
   if (getTransactionId(transaction) !== transaction.id) {
-    console.log("invalid tx id:" + transaction.id);
+    console.log("invalid tx id: " + transaction.id);
     return false;
   }
   const hasValidTxIns = transaction.txIns
     .map((txIn) => validateTxIn(txIn, transaction, aUnspentTxOuts))
     .reduce((a, b) => a && b, true);
   if (!hasValidTxIns) {
-    console.log("some of the txIns are invalid in tx:" + transaction.id);
+    console.log("some of the txIns are invalid in tx: " + transaction.id);
     return false;
   }
-  //아웃풋의 코인갯수와 인풋의 코인갯수 같아야함.
   const totalTxInValues = transaction.txIns
     .map((txIn) => getTxInAmount(txIn, aUnspentTxOuts))
     .reduce((a, b) => a + b, 0);
-
   const totalTxOutValues = transaction.txOuts
     .map((txOut) => txOut.amount)
     .reduce((a, b) => a + b, 0);
-
   if (totalTxOutValues !== totalTxInValues) {
-    console.log("totalTxOutValues !== totalTxInValues in tx:" + transaction.id);
+    console.log(
+      "totalTxOutValues !== totalTxInValues in tx: " + transaction.id
+    );
     return false;
   }
   return true;
@@ -82,18 +79,18 @@ const validateBlockTransactions = (
 ) => {
   const coinbaseTx = aTransactions[0];
   if (!validateCoinbaseTx(coinbaseTx, blockIndex)) {
-    console.log("invalid coinbase transaction:" + JSON.stringify(coinbaseTx));
+    console.log("invalid coinbase transaction: " + JSON.stringify(coinbaseTx));
     return false;
   }
+  //check for duplicate txIns. Each txIn can be included only once
   const txIns = _(aTransactions)
     .map((tx) => tx.txIns)
     .flatten()
     .value();
-
   if (hasDuplicates(txIns)) {
     return false;
   }
-
+  // all but coinbase transactions
   const normalTransactions = aTransactions.slice(1);
   return normalTransactions
     .map((tx) => validateTransaction(tx, aUnspentTxOuts))
@@ -105,7 +102,7 @@ const hasDuplicates = (txIns) => {
   return _(groups)
     .map((value, key) => {
       if (value > 1) {
-        console.log("duplicatie txIn: " + key);
+        console.log("duplicate txIn: " + key);
         return true;
       } else {
         return false;
@@ -113,6 +110,7 @@ const hasDuplicates = (txIns) => {
     })
     .includes(true);
 };
+
 //코인베이스 트랜잭션의 유효성검증
 
 const validateCoinbaseTx = (transaction, blockIndex) => {
@@ -123,7 +121,7 @@ const validateCoinbaseTx = (transaction, blockIndex) => {
     return false;
   }
   if (getTransactionId(transaction) !== transaction.id) {
-    console.log("invalid coinbase tx id:" + transaction.id);
+    console.log("invalid coinbase tx id: " + transaction.id);
     return false;
   }
   if (transaction.txIns.length !== 1) {
@@ -144,14 +142,13 @@ const validateCoinbaseTx = (transaction, blockIndex) => {
   }
   return true;
 };
-
 //트랜잭션 인풋들의 서명도 사용되지 않은 아웃풋을 잘 참조하고 있는지 확인해야함
 const validateTxIn = (txIn, transaction, aUnspentTxOuts) => {
   const referencedUTxOut = aUnspentTxOuts.find(
     (uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutId === txIn.txOutId
   );
   if (referencedUTxOut == null) {
-    console.log("referenced txOut not found :" + JSON.stringify(txIn));
+    console.log("referenced txOut not found: " + JSON.stringify(txIn));
     return false;
   }
   const address = referencedUTxOut.address;
@@ -210,7 +207,6 @@ const signTxIn = (transaction, txInIndex, privateKey, aUnspentTxOuts) => {
 };
 
 const updateUnspentTxOuts = (newTransactions, aUnspentTxOuts) => {
-  //새로운보내지지않는 트랜잭션 아웃풋들 함수
   const newUnspentTxOuts = newTransactions
     .map((t) => {
       return t.txOuts.map(
@@ -219,14 +215,10 @@ const updateUnspentTxOuts = (newTransactions, aUnspentTxOuts) => {
       );
     })
     .reduce((a, b) => a.concat(b), []);
-
-  //소비된트랜잭션아웃풋들 함수
   const consumedTxOuts = newTransactions
     .map((t) => t.txIns)
     .reduce((a, b) => a.concat(b), [])
     .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, "", 0));
-
-  //결과적으로(?)보내지지않은트랜잭션아웃풋들 함수
   const resultingUnspentTxOuts = aUnspentTxOuts
     .filter(
       (uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)
@@ -240,7 +232,6 @@ const processTransactions = (aTransactions, aUnspentTxOuts, blockIndex) => {
   if (!isValidTransactionsStructure(aTransactions)) {
     return null;
   }
-
   if (!validateBlockTransactions(aTransactions, aUnspentTxOuts, blockIndex)) {
     console.log("invalid block transactions");
     return null;
@@ -299,6 +290,7 @@ const isValidTransactionsStructure = (transactions) => {
     .map(isValidTransactionStructure)
     .reduce((a, b) => a && b, true);
 };
+
 //트랜잭션구조가 맞는지 보는 함수
 const isValidTransactionStructure = (transaction) => {
   if (typeof transaction.id !== "string") {
@@ -332,7 +324,7 @@ const isValidTransactionStructure = (transaction) => {
 //valid address is a valid ecdsa public key in the 04 + X-coordinate + Y-coordinate format
 const isValidAddress = (address) => {
   if (address.length !== 130) {
-    console.log("invalid public key length 유효하지 않은 공개키길이");
+    console.log("invalid public key length");
     return false;
   } else if (address.match("^[a-fA-F0-9]+$") === null) {
     console.log("public key must contain only hex characters");
@@ -353,6 +345,6 @@ module.exports = {
   Transaction,
   getTransactionId,
   signTxIn,
-  processTransactions,
   getPublicKey,
+  getCoinbaseTransaction,
 };

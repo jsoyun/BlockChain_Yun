@@ -12,7 +12,8 @@ const {
 } = require("./r_blockchain");
 const { Blockchain } = require("../models");
 const merkle = require("merkle");
-const { processTransactions } = require("./r_transaction");
+const transaction_1 = require("./r_transaction");
+// const { processTransactions } = require("./r_transaction");
 
 function isValidBlockStructure(block) {
   return (
@@ -97,7 +98,7 @@ let unspentTxOuts = [];
 function addBlock(newBlock) {
   const { getLastBlock } = require("./r_blockchain");
   if (isValidNewBlock(newBlock, getLastBlock())) {
-    const retVal = processTransactions(
+    const retVal = transaction_1.processTransactions(
       newBlock.data,
       unspentTxOuts,
       newBlock.index
