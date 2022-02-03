@@ -1,4 +1,4 @@
-Object.defineProperty(exports, "__esModule", { value: true });
+// Object.defineProperty(exports, "__esModule", { value: true });
 const CryptoJS = require("crypto-js");
 const ecdsa = require("elliptic");
 const _ = require("lodash");
@@ -18,7 +18,7 @@ class UnspentTxOut {
   }
 }
 
-let unspentTxOuts = [];
+// let unspentTxOuts = [];
 
 //코인어디로부터 왔는지 정보
 class TxIn {}
@@ -59,6 +59,7 @@ const validateTransaction = (transaction, aUnspentTxOuts) => {
     console.log("some of the txIns are invalid in tx:" + transaction.id);
     return false;
   }
+  //아웃풋의 코인갯수와 인풋의 코인갯수 같아야함.
   const totalTxInValues = transaction.txIns
     .map((txIn) => getTxInAmount(txIn, aUnspentTxOuts))
     .reduce((a, b) => a + b, 0);
@@ -112,6 +113,7 @@ const hasDuplicates = (txIns) => {
     })
     .includes(true);
 };
+//코인베이스 트랜잭션의 유효성검증
 
 const validateCoinbaseTx = (transaction, blockIndex) => {
   if (transaction == null) {
@@ -143,7 +145,7 @@ const validateCoinbaseTx = (transaction, blockIndex) => {
   return true;
 };
 
-//
+//트랜잭션 인풋들의 서명도 사용되지 않은 아웃풋을 잘 참조하고 있는지 확인해야함
 const validateTxIn = (txIn, transaction, aUnspentTxOuts) => {
   const referencedUTxOut = aUnspentTxOuts.find(
     (uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutId === txIn.txOutId
@@ -174,12 +176,12 @@ const getCoinbaseTransaction = (address, blockIndex) => {
   txIn.txOutId = "";
   txIn.txOutIndex = blockIndex;
   t.txIns = [txIn];
-  t.txOuts = [new TxOut(adddress, COINBASE_AMOUNT)];
+  t.txOuts = [new TxOut(address, COINBASE_AMOUNT)];
   t.id = getTransactionId(t);
   return t;
 };
 
-exports.getCoinbaseTransaction = getCoinbaseTransaction;
+// exports.getCoinbaseTransaction = getCoinbaseTransaction;
 
 //트랜잭션 인풋에 서명하는 함수
 const signTxIn = (transaction, txInIndex, privateKey, aUnspentTxOuts) => {
@@ -196,35 +198,42 @@ const signTxIn = (transaction, txInIndex, privateKey, aUnspentTxOuts) => {
   }
   const referencedAddress = referencedUnspentTxOut.address;
   if (getPublicKey(privateKey) !== referencedAddress) {
-    console.log("trying to sign an inpu");
+    console.log(
+      "trying to sign an input with private" +
+        " key that does not match the address that is referenced in txIn"
+    );
+    throw Error();
   }
   const key = ec.keyFromPrivate(privateKey, "hex");
   const signature = toHexString(key.sign(dataToSign).toDER());
   return signature;
 };
 
-//새로운보내지지않는 트랜잭션 아웃풋들 함수
-const newUnspentTxOuts = newTransactions
-  .map((t) => {
-    return t.txOuts.map(
-      (txOut, index) =>
-        new UnspentTxOut(t.id, index, txOut.address, txOut.amount)
-    );
-  })
-  .reduce((a, b) => a.concat(b), []);
+const updateUnspentTxOuts = (newTransactions, aUnspentTxOuts) => {
+  //새로운보내지지않는 트랜잭션 아웃풋들 함수
+  const newUnspentTxOuts = newTransactions
+    .map((t) => {
+      return t.txOuts.map(
+        (txOut, index) =>
+          new UnspentTxOut(t.id, index, txOut.address, txOut.amount)
+      );
+    })
+    .reduce((a, b) => a.concat(b), []);
 
-//소비된트랜잭션아웃풋들 함수
-const consumedTxOuts = newTransactions
-  .map((t) => t.txIns)
-  .reduce((a, b) => a.concat(b), [])
-  .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, "", 0));
+  //소비된트랜잭션아웃풋들 함수
+  const consumedTxOuts = newTransactions
+    .map((t) => t.txIns)
+    .reduce((a, b) => a.concat(b), [])
+    .map((txIn) => new UnspentTxOut(txIn.txOutId, txIn.txOutIndex, "", 0));
 
-//결과적으로(?)보내지지않은트랜잭션아웃풋들 함수
-const resultingUnspentTxOuts = aUnspentTxOuts
-  .filter(
-    (uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)
-  )
-  .concat(newUnspentTxOuts);
+  //결과적으로(?)보내지지않은트랜잭션아웃풋들 함수
+  const resultingUnspentTxOuts = aUnspentTxOuts
+    .filter(
+      (uTxO) => !findUnspentTxOut(uTxO.txOutId, uTxO.txOutIndex, consumedTxOuts)
+    )
+    .concat(newUnspentTxOuts);
+  return resultingUnspentTxOuts;
+};
 
 //
 const processTransactions = (aTransactions, aUnspentTxOuts, blockIndex) => {
@@ -239,26 +248,14 @@ const processTransactions = (aTransactions, aUnspentTxOuts, blockIndex) => {
   return updateUnspentTxOuts(aTransactions, aUnspentTxOuts);
 };
 
-const isValidTransactionsStructure = (transactions) => {
-  return transactions
-    .map(isValidTransactionStructure)
-    .reduce((a, b) => a && b, true);
+const toHexString = (byteArray) => {
+  return Array.from(byteArray, (byte) => {
+    return ("0" + (byte & 0xff).toString(16)).slice(-2);
+  }).join("");
 };
 
-const isValidTransactionStructure = (transaction) => {
-  if (typeof transaction.id !== "string") {
-    console.log("transactionId missing");
-    return false;
-  }
-  if (!(transaction.txIns instanceof Array)) {
-    console.log("invalid txIns type in transaction");
-    return false;
-  }
-  if (
-    !transaction.txIns.map(isValidTxInStructure).reduce((a, b) => a && b, true)
-  ) {
-    return false;
-  }
+const getPublicKey = (aPrivateKey) => {
+  return ec.keyFromPrivate(aPrivateKey, "hex").getPublic().encode("hex");
 };
 
 const isValidTxInStructure = (txIn) => {
@@ -279,4 +276,83 @@ const isValidTxInStructure = (txIn) => {
   }
 };
 
-module.exports = { processTransactions };
+const isValidTxOutStructure = (txOut) => {
+  if (txOut == null) {
+    console.log("txOut is null");
+    return false;
+  } else if (typeof txOut.address !== "string") {
+    console.log("invalid address type in txOut");
+    return false;
+  } else if (!isValidAddress(txOut.address)) {
+    console.log("invalid TxOut address");
+    return false;
+  } else if (typeof txOut.amount !== "number") {
+    console.log("invalid amount type in txOut");
+    return false;
+  } else {
+    return true;
+  }
+};
+
+const isValidTransactionsStructure = (transactions) => {
+  return transactions
+    .map(isValidTransactionStructure)
+    .reduce((a, b) => a && b, true);
+};
+//트랜잭션구조가 맞는지 보는 함수
+const isValidTransactionStructure = (transaction) => {
+  if (typeof transaction.id !== "string") {
+    console.log("transactionId missing");
+    return false;
+  }
+  if (!(transaction.txIns instanceof Array)) {
+    console.log("invalid txIns type in transaction");
+    return false;
+  }
+  if (
+    !transaction.txIns.map(isValidTxInStructure).reduce((a, b) => a && b, true)
+  ) {
+    return false;
+  }
+  if (!(transaction.txOuts instanceof Array)) {
+    console.log("invalid txIns type in transaction");
+    return false;
+  }
+  if (
+    !transaction.txOuts
+      .map(isValidTxOutStructure)
+      .reduce((a, b) => a && b, true)
+  ) {
+    return false;
+  }
+  return true;
+};
+
+//유효한 주소는 04 + X 좌표 + Y 좌표 형식의 유효한 ecdsa 공개 키입니다.
+//valid address is a valid ecdsa public key in the 04 + X-coordinate + Y-coordinate format
+const isValidAddress = (address) => {
+  if (address.length !== 130) {
+    console.log("invalid public key length 유효하지 않은 공개키길이");
+    return false;
+  } else if (address.match("^[a-fA-F0-9]+$") === null) {
+    console.log("public key must contain only hex characters");
+    return false;
+  } else if (!address.startsWith("04")) {
+    console.log("public key must start with 04");
+    return false;
+  }
+  return true;
+};
+//# sourceMappingURL=transaction.js.map
+
+module.exports = {
+  processTransactions,
+  UnspentTxOut,
+  TxIn,
+  TxOut,
+  Transaction,
+  getTransactionId,
+  signTxIn,
+  processTransactions,
+  getPublicKey,
+};
