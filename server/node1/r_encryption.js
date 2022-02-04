@@ -5,11 +5,34 @@ const fs = require("fs");
 // 타원 곡선 디지털 서명 알고리즘
 const ecdsa = require("elliptic");
 // const { generateKey } = require("crypto");
+const transaction_1 = require("./r_transaction");
 const ec = new ecdsa.ec("secp256k1");
 
 const privateKeyLocation =
   "node1/wallet/" + (process.env.PRIVATE_KEY || "default");
 const privateKeyFile = privateKeyLocation + "/private_key";
+
+//비밀키(인증서) 출력하는 함수
+function getPrivateKeyFromWallet() {
+  //지갑에 만들어놓은 걸 읽을 수 있게 해줌
+  const buffer = fs.readFileSync(privateKeyFile, "utf8");
+  return buffer.toString();
+}
+
+//공개키 (지갑주소) 만들기
+function getPublicKeyFromWallet() {
+  const privateKey = getPrivateKeyFromWallet();
+  const key = ec.keyFromPrivate(privateKey, "hex");
+  return key.getPublic().encode("hex");
+}
+
+//비밀키 생성
+function generatePrivatekey() {
+  const keyPair = ec.genKeyPair();
+  const privateKey = keyPair.getPrivate();
+  //16진수로 만들어서 리턴
+  return privateKey.toString(16);
+}
 
 function initWallet() {
   if (fs.existsSync(privateKeyFile)) {
@@ -33,26 +56,57 @@ function initWallet() {
   console.log("새로운 지갑 생성 private key 경로 :" + privateKeyFile);
 }
 
-//비밀키 생성
-function generatePrivatekey() {
-  const keyPair = ec.genKeyPair();
-  const privateKey = keyPair.getPrivate();
-  //16진수로 만들어서 리턴
-  return privateKey.toString(16);
-}
+//잔고보여주는 함수
+const getBalance = (address, unspentTxOuts) => {
+  return _(unspentTxOuts)
+    .filter((uTxO) => uTxO.address === address)
+    .map((uTxO) => uTxO.amount)
+    .sum();
+};
 
-//비밀키(인증서) 출력하는 함수
-function getPrivateKeyFromWallet() {
-  //지갑에 만들어놓은 걸 읽을 수 있게 해줌
-  const buffer = fs.readFileSync(privateKeyFile, "utf8");
-  return buffer.toString();
-}
+//트랜잭션아웃풋들로 남은 금액양들 찾기
+const findTxOutsForAmount = (amount, myUnspentTxOuts) => {
+  let currentAmount = 0;
+  const includedUnspentTxOuts = [];
 
-//공개키 (지갑주소) 만들기
-function getPublicKeyFromWallet() {
-  const privateKey = getPrivateKeyFromWallet();
-  const key = ec.keyFromPrivate(privateKey, "hex");
-  return key.getPublic().encode("hex");
-}
+  for (const myUnspentTxOut of myUnspentTxOuts) {
+    includedUnspentTxOuts.push(myUnspentTxOut);
+    currentAmount = currentAmount + myUnspentTxOut.amount;
+    if (currentAmount >= amount) {
+      const leftOverAmount = currentAmount - amount;
+      return { includedUnspentTxOuts, leftOverAmount };
+    }
+  }
+  throw Error("not enough coins to send transaction");
+};
 
-module.exports = { getPublicKeyFromWallet, initWallet };
+//트랜잭션 아웃풋 만드는 함수
+const createTxOuts = (receiverAddress, myAddress, amount, leftOverAmount) => {
+  const txOut1 = new transaction_1.TxOut(receiverAddress, amount);
+  if (leftOverAmount === 0) {
+    return [txOut1];
+  } else {
+    const leftOverTx = new transaction_1.TxOut(myAddress, leftOverAmount);
+    return [txOut1, leftOverTx];
+  }
+};
+//트랜잭션 만드는 함수
+const createTransaction = (
+  receiverAddress,
+  amount,
+  privateKey,
+  unspentTxOuts
+) => {
+  const myAddress = transaction_1.getPublicKey(privateKey);
+  const myUnspentTxOuts = unspentTxOuts.filter(
+    (uTxO) => uTxO.address === myAddress
+  );
+};
+
+module.exports = {
+  getPrivateKeyFromWallet,
+  getPublicKeyFromWallet,
+  generatePrivatekey,
+  initWallet,
+  getBalance,
+};

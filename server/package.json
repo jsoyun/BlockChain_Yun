@@ -23,6 +23,7 @@
     "elliptic": "^6.5.4",
     "express": "^4.17.2",
     "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
     "merkle": "^0.6.0",
     "morgan": "^1.10.0",
     "mysql2": "^2.3.3",
