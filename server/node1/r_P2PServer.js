@@ -16,7 +16,7 @@ function initP2PServer(p2p_port) {
   console.log("Listening webSocket port : " + p2p_port);
 }
 // 내 소켓서버는 6001번 포트!
-initP2PServer(6001);
+initP2PServer(p2p_port);
 
 // 내가 연결할 사람들 주소록
 let sockets = [];

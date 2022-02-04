@@ -17,6 +17,9 @@ const {
   getVersion,
   // addBlock,
   blockchainInit,
+  generateRawNextBlock,
+  getAccountBalance,
+  generatenextBlockWithTransaction,
 } = require("./r_blockchain");
 const { addBlock } = require("./r_checkValidBlock");
 const {
@@ -72,6 +75,38 @@ function initHttpServer() {
 
   app.get("/version", (req, res) => {
     res.send(getVersion());
+  });
+
+  //지갑사용하기 위한 버튼
+  app.get("/balance", (req, res) => {
+    const balance = getAccountBalance();
+    res.send({ balance: balance });
+  });
+
+  //새블록채굴버튼
+  app.post("/mineRawBlock", (req, res) => {
+    if (req.body.data == null) {
+      res.send("data paramter is missing");
+      return;
+    }
+    const newBlock = generateRawNextBlock(req.body.data);
+    if (newBlock === null) {
+      res.status(400).send("could not generate block");
+    } else {
+      res.send(newBlock);
+    }
+  });
+  //지갑사용하는 버튼
+  app.post("/mineTransaction", (req, res) => {
+    const address = req.body.address;
+    const amount = req.body.amount;
+    try {
+      const resp = generatenextBlockWithTransaction(address, amount);
+      res.send(resp);
+    } catch (e) {
+      console.log(e.message);
+      res.status(400).send(e.message);
+    }
   });
 
   app.post("/mineBlock", (req, res) => {

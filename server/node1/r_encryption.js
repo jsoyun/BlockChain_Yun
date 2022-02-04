@@ -101,6 +101,30 @@ const createTransaction = (
   const myUnspentTxOuts = unspentTxOuts.filter(
     (uTxO) => uTxO.address === myAddress
   );
+  const { includedUnspentTxOuts, leftOverAmount } = findTxOutsForAmount(
+    amount,
+    myUnspentTxOuts
+  );
+  const toUnsignedTxIn = (unspentTxOut) => {
+    const txIn = new transaction_1.TxIn();
+    txIn.txOutId = unspentTxOut.txOutId;
+    txIn.txOutIndex = unspentTxOut.txOutIndex;
+    return txIn;
+  };
+  const unsignedTxIns = includedUnspentTxOuts.map(toUnsignedTxIn);
+  const tx = new transaction_1.Transaction();
+  tx.txIns = unsignedTxIns;
+  tx.txOuts = createTxOuts(receiverAddress, myAddress, amount, leftOverAmount);
+  tx.id = transaction_1.getTransactionId(tx);
+  tx.txIns = tx.txIns.map((txIn, index) => {
+    txIn.signature = transaction_1.signTxIn(
+      tx,
+      index,
+      privateKey,
+      unspentTxOuts
+    );
+  });
+  return tx;
 };
 
 module.exports = {
@@ -109,4 +133,5 @@ module.exports = {
   generatePrivatekey,
   initWallet,
   getBalance,
+  createTransaction,
 };

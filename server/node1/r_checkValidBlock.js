@@ -15,6 +15,7 @@ const merkle = require("merkle");
 const transaction_1 = require("./r_transaction");
 // const { processTransactions } = require("./r_transaction");
 
+//유효한 블록구조인지 검사하는 함수
 function isValidBlockStructure(block) {
   return (
     typeof block.header.version === "string" &&
@@ -27,7 +28,7 @@ function isValidBlockStructure(block) {
     typeof block.body === "object"
   );
 }
-
+//다음블록이 유효한지 보는 함수
 function isValidNewBlock(newBlock, prevBlock) {
   const { createHash, isValidTimestamp } = require("./r_blockchain");
   if (isValidBlockStructure(newBlock) === false) {
@@ -58,7 +59,7 @@ function isValidNewBlock(newBlock, prevBlock) {
   }
   return true;
 }
-
+//유효한 체인인지 검증하는 함수
 function isValidChain(newBlocks) {
   const { Blocks } = require("./r_blockchain");
   //제네시스블록부터 확인,0번이 제네시스블록임
@@ -94,7 +95,7 @@ function isValidChain(newBlocks) {
 // }
 
 let unspentTxOuts = [];
-//addBlock했을때 보상거래내역 들어오게
+//addBlock했을때 보상거래내역 들어오게,addBlockToChain임.
 function addBlock(newBlock) {
   const { getLastBlock } = require("./r_blockchain");
   if (isValidNewBlock(newBlock, getLastBlock())) {

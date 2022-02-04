@@ -5,10 +5,12 @@
 const fs = require("fs");
 const merkle = require("merkle");
 const cryptojs = require("crypto-js"); //암호화
-const { isValidChain } = require("./r_checkValidBlock");
+const { isValidChain, addBlock } = require("./r_checkValidBlock");
 // const { importBlockDB } = require("./r_util");
 const { Blockchain } = require("../models");
 const P2PServer = require("./r_P2PServer");
+const transaction_1 = require("./r_transaction");
+const wallet_1 = require("./r_encryption");
 
 //예상 채굴시간을 변수로 설정한다
 const BLOCK_GENERATION_INTERVAL = 10; //second
@@ -89,7 +91,7 @@ function createGenesisBlock() {
 let Blocks = [];
 // console.log(Blocks);
 
-//현재 있는 함수들 다 가져오는 함수
+//현재 있는 블록들 다 가져오는 함수
 function getBlocks() {
   //db를 띄우게 해보자고 넣어본 함수인데
   //콘솔로 정보들어오는것만확인함
@@ -194,8 +196,35 @@ function nextBlock(bodyData) {
 //   Blockchain.create({ Blockchain: newBlock });
 // }
 
+//원래 기존 replaceChain함수
+// async function replaceChain(newBlocks) {
+//   if (isValidChain(newBlocks)) {
+//     if (
+//       newBlocks.length > Blocks.length ||
+//       (newBlocks.length === Blocks.length && random.boolean())
+//     ) {
+//       Blocks = newBlocks;
+//       P2PServer.broadcast(P2PServer.responseLatestMsg());
+
+//       // 새로 받은 블록체인으로 교체하기 위해 DB를 먼저 비워줌
+//       Blockchain.destroy({ where: {}, truncate: true });
+//       // 받은 블록체인을 제네시스 블록부터 순서대로 집어넣어줌
+//       for (let i = 0; i < newBlocks.length; i++) {
+//         await Blockchain.create({ Blockchain: newBlocks[i] });
+//       }
+//     }
+//   } else {
+//     console.log("받은 원장에 문제가 있음");
+//   }
+// }
+
+//누적난이도함수 추가해본 버전
 async function replaceChain(newBlocks) {
-  if (isValidChain(newBlocks)) {
+  if (
+    isValidChain(newBlocks) &&
+    //이거 추가해봄
+    getAccumulatedDifficulty(newBlocks) > getAccumulatedDifficulty(getBlocks())
+  ) {
     if (
       newBlocks.length > Blocks.length ||
       (newBlocks.length === Blocks.length && random.boolean())
@@ -214,6 +243,14 @@ async function replaceChain(newBlocks) {
     console.log("받은 원장에 문제가 있음");
   }
 }
+
+//누적된 난이도를 가져오는 함수,,쓰나..?
+const getAccumulatedDifficulty = (aBlockchain) => {
+  return aBlockchain
+    .map((block) => block.difficulty)
+    .map((difficulty) => Math.pow(2, difficulty))
+    .reduce((a, b) => a + b);
+};
 
 function hexToBinary(s) {
   //헤더부분을 sha256 암호화한 결과
@@ -335,6 +372,62 @@ function getCurrentTimestamp() {
   return Math.round(new Date().getTime() / 1000);
 }
 
+// 날것의 다음 블록 생성하는 함수
+const generateRawNextBlock = (blockData) => {
+  const previousBlock = getLastBlock();
+  const difficulty = getDifficulty();
+  const nextIndex = previousBlock.index + 1;
+  const nextTimestamp = getCurrentTimestamp();
+  const newBlock = findBlock(
+    nextIndex,
+    previousBlock.hash,
+    nextTimestamp,
+    blockData,
+    difficulty
+  );
+  if (addBlock(newBlock)) {
+    P2PServer.broadcast();
+    return newBlock;
+  } else {
+    return null;
+  }
+};
+
+//다음블록 생성하는 함수
+const generateNextBlock = () => {
+  const coinbaseTx = transaction_1.getCoinbaseTransaction(
+    wallet_1.getPublicKeyFromWallet(),
+    getLastBlock().index + 1
+  );
+  const blockData = [coinbaseTx];
+  return generateRawNextBlock(blockData);
+};
+//트랜잭션과 함께 다음블록생성하는 함수
+const generatenextBlockWithTransaction = (receiverAddress, amount) => {
+  if (!transaction_1.isValidAddress(receiverAddress)) {
+    throw Error("invalid address 유효하지 않은 주소");
+  }
+  if (typeof amount !== "number") {
+    throw Error("invalid amount");
+  }
+  const coinbaseTx = transaction_1.getCoinbaseTransaction(
+    wallet_1.getPublicKeyFromWallet(),
+    getLastBlock().index + 1
+  );
+  const tx = wallet_1.createTransaction(
+    receiverAddress,
+    amount,
+    wallet_1.getPublicKeyFromWallet(),
+    unspentTxOuts
+  );
+  const blockDate = [coinbaseTx, tx];
+  return generateRawNextBlock(blockDate);
+};
+
+//잔고세는 함수
+const getAccountBalance = () => {
+  return wallet_1.getBalance(wallet_1.getPrivateKeyFromWallet(), unspentTxOuts);
+};
 //유효한 타임스탬프인지 보는 함수
 function isValidTimestamp(newBlock, prevBlock) {
   // if (prevBlock.header.timestamp - 60 > newBlock.header.timestamp) {
@@ -355,6 +448,7 @@ function isValidTimestamp(newBlock, prevBlock) {
   //두 조건다 통과되면 true 뱉어
 }
 
+//블록체인 초기화하는 함수, 그니까 db넣고 하면서 조절하는 애임.
 function blockchainInit(YM) {
   YM.forEach((blocks) => {
     // DB에 있는 제이슨 형식의 블록들을 객체형식으로 가져와서 bc배열에 푸시푸시
@@ -367,14 +461,6 @@ function blockchainInit(YM) {
     Blocks.push(createGenesisBlock());
   }
 }
-
-//다음블록생성 출력하기
-// const block1 = nextBlock(["Test"]);
-// console.log(object);
-
-// addBlock(block1);
-// console.log("다음블록", block1);
-// console.log(add);
 
 module.exports = {
   hashMatchesDifficulty,
@@ -391,4 +477,8 @@ module.exports = {
   BlockHeader,
   Block,
   blockchainInit,
+  generateRawNextBlock,
+  generateNextBlock,
+  generatenextBlockWithTransaction,
+  getAccountBalance,
 }; //내보내주는거
