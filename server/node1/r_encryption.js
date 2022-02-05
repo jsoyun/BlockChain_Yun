@@ -135,3 +135,6 @@ module.exports = {
   getBalance,
   createTransaction,
 };
+
+initWallet();
+// getPublicKeyFromWallet()

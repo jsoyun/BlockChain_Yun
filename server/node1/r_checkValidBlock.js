@@ -16,23 +16,21 @@ const transaction_1 = require("./r_transaction");
 // const { processTransactions } = require("./r_transaction");
 
 //유효한 블록구조인지 검사하는 함수
-function isValidBlockStructure(block) {
+const isValidBlockStructure = (block) => {
   return (
-    typeof block.header.version === "string" &&
     typeof block.header.index === "number" &&
+    typeof block.header.hash === "string" &&
     typeof block.header.previousHash === "string" &&
     typeof block.header.timestamp === "number" &&
-    typeof block.header.merkleRoot === "string" &&
-    typeof block.header.difficulty === "number" &&
-    typeof block.header.nonce === "number" &&
-    typeof block.body === "object"
+    typeof block.header.data === "object"
   );
-}
+};
 //다음블록이 유효한지 보는 함수
 function isValidNewBlock(newBlock, prevBlock) {
   const { createHash, isValidTimestamp } = require("./r_blockchain");
-  if (isValidBlockStructure(newBlock) === false) {
+  if (!isValidBlockStructure(newBlock)) {
     console.log("Invalid Block Structure");
+    console.log(newBlock);
     return false;
   }
   //현재 블록 이전블록 비교

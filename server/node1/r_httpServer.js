@@ -19,6 +19,7 @@ const {
   blockchainInit,
   generateRawNextBlock,
   getAccountBalance,
+  generateNextBlock,
   generatenextBlockWithTransaction,
 } = require("./r_blockchain");
 const { addBlock } = require("./r_checkValidBlock");
@@ -114,15 +115,20 @@ function initHttpServer() {
   });
 
   app.post("/mineBlock", (req, res) => {
+    // const data = req.body.data || [];
+    // console.log(data);
+    // const block = nextBlock(data);
+    // addBlock(block);
+    // // broadcast(block)
+    // broadcast(responseLatestMsg());
+    // res.send(getBlocks());
     const data = req.body.data || [];
     console.log(data);
-    const block = nextBlock(data);
+    const block = generateNextBlock(data);
     addBlock(block);
     // broadcast(block)
     broadcast(responseLatestMsg());
     res.send(getBlocks());
-    //디비저장하는 함수 만들어보자
-    // addDB(getBlocks());
   });
   //////////////////추가////////////
   app.post("/data", (req, res) => {

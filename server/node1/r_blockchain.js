@@ -159,33 +159,43 @@ function calculateHash(
   return hash;
 }
 
-//다음블록 만들었을 때 기존 블록 정보 가져와
-function nextBlock(bodyData) {
-  //마지막 블록
-  const prevBlock = getLastBlock();
-  const version = getVersion();
-  //넥스트블록의 인덱스는 이전블록 헤더인덱스+1
-  const index = prevBlock.header.index + 1;
-  //이전 블록의 해시값
-  const previousHash = createHash(prevBlock);
-  const timestamp = parseInt(Date.now() / 1000);
-  const tree = merkle("sha256").sync(bodyData);
-  const merkleRoot = tree.root() || "0".repeat(64);
-  //난이도 조절함수 추가 //utils에 getDifficulty 함수 있음요
-  const difficulty = getDifficulty(getBlocks());
+// //다음블록 만들었을 때 기존 블록 정보 가져와
+// function nextBlock(bodyData) {
+//   //마지막 블록
+//   const prevBlock = getLastBlock();
+//   const version = getVersion();
+//   //넥스트블록의 인덱스는 이전블록 헤더인덱스+1
+//   const index = prevBlock.header.index + 1;
+//   //이전 블록의 해시값
+//   const previousHash = createHash(prevBlock);
+//   const timestamp = parseInt(Date.now() / 1000);
+//   const tree = merkle("sha256").sync(bodyData);
+//   const merkleRoot = tree.root() || "0".repeat(64);
+//   //난이도 조절함수 추가 //utils에 getDifficulty 함수 있음요
+//   const difficulty = getDifficulty(getBlocks());
 
-  // console.log("나니도", difficulty);
-  const header = findBlock(
-    version,
-    index,
-    previousHash,
-    timestamp,
-    merkleRoot,
-    difficulty
+//   // console.log("나니도", difficulty);
+//   const header = findBlock(
+//     version,
+//     index,
+//     previousHash,
+//     timestamp,
+//     merkleRoot,
+//     difficulty
+//   );
+//   // console.log("넥스트", header);
+//   return new Block(header, bodyData);
+// }
+
+//다음블록 생성하는 함수
+const generateNextBlock = () => {
+  const coinbaseTx = transaction_1.getCoinbaseTransaction(
+    wallet_1.getPublicKeyFromWallet(),
+    getLastBlock().index + 1
   );
-  // console.log("넥스트", header);
-  return new Block(header, bodyData);
-}
+  const blockData = [coinbaseTx];
+  return generateRawNextBlock(blockData);
+};
 
 //블록 추가하는 함수
 //넣는 인자 bodyData에서 newBlock으로 바꿈요
@@ -375,7 +385,10 @@ function getCurrentTimestamp() {
 // 날것의 다음 블록 생성하는 함수
 const generateRawNextBlock = (blockData) => {
   const previousBlock = getLastBlock();
-  const difficulty = getDifficulty();
+  console.log("확인", previousBlock);
+
+  const difficulty = getDifficulty(getBlocks());
+  console.log("디피컬트", difficulty);
   const nextIndex = previousBlock.index + 1;
   const nextTimestamp = getCurrentTimestamp();
   const newBlock = findBlock(
@@ -393,15 +406,6 @@ const generateRawNextBlock = (blockData) => {
   }
 };
 
-//다음블록 생성하는 함수
-const generateNextBlock = () => {
-  const coinbaseTx = transaction_1.getCoinbaseTransaction(
-    wallet_1.getPublicKeyFromWallet(),
-    getLastBlock().index + 1
-  );
-  const blockData = [coinbaseTx];
-  return generateRawNextBlock(blockData);
-};
 //트랜잭션과 함께 다음블록생성하는 함수
 const generatenextBlockWithTransaction = (receiverAddress, amount) => {
   if (!transaction_1.isValidAddress(receiverAddress)) {
@@ -469,7 +473,7 @@ module.exports = {
   createHash,
   Blocks,
   getLastBlock,
-  nextBlock,
+  // nextBlock,
   // addBlock,
   getVersion,
   createGenesisBlock,
