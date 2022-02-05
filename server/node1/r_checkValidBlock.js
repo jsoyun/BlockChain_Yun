@@ -46,7 +46,7 @@ function isValidNewBlock(newBlock, prevBlock) {
     return false;
   } else if (
     (newBlock.body.length === 0 &&
-      ("0", repeat(64) !== newBlock.header.merkleRoot)) ||
+      "0".repeat(64) !== newBlock.header.merkleRoot) ||
     (newBlock.body.length !== 0 &&
       merkle("sha256").sync(newBlock.body).root() !==
         newBlock.header.merkleRoot)

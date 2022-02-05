@@ -284,13 +284,13 @@ const isValidTxOutStructure = (txOut) => {
     return true;
   }
 };
-
 const isValidTransactionsStructure = (transactions) => {
+  console.log("dfdf", transactions, "dfdf");
   return transactions
     .map(isValidTransactionStructure)
+
     .reduce((a, b) => a && b, true);
 };
-
 //트랜잭션구조가 맞는지 보는 함수
 const isValidTransactionStructure = (transaction) => {
   if (typeof transaction.id !== "string") {
@@ -319,7 +319,6 @@ const isValidTransactionStructure = (transaction) => {
   }
   return true;
 };
-
 //유효한 주소는 04 + X 좌표 + Y 좌표 형식의 유효한 ecdsa 공개 키입니다.
 //valid address is a valid ecdsa public key in the 04 + X-coordinate + Y-coordinate format
 const isValidAddress = (address) => {

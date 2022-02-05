@@ -98,8 +98,12 @@ function initHttpServer() {
   });
   //지갑사용하는 버튼
   app.post("/mineTransaction", (req, res) => {
-    const address = req.body.address;
-    const amount = req.body.amount;
+    // const address = req.body.address;
+    // const amount = req.body.amount;
+    console.log("즈소dd", req.body);
+    const address = JSON.parse(req.body.address);
+    const amount = JSON.parse(req.body.amount);
+    console.log("즈소", address, "양", amount);
     try {
       const resp = generatenextBlockWithTransaction(address, amount);
       res.send(resp);
