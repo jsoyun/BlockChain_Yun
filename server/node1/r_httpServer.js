@@ -15,14 +15,14 @@ const {
   getBlocks,
   nextBlock,
   getVersion,
-  // addBlock,
+  addBlock,
   blockchainInit,
   generateRawNextBlock,
   getAccountBalance,
   generateNextBlock,
   generatenextBlockWithTransaction,
 } = require("./r_blockchain");
-const { addBlock } = require("./r_checkValidBlock");
+// const { addBlock } = require("./r_checkValidBlock");
 const {
   connectToPeers,
   getSockets,

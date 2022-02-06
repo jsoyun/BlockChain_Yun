@@ -384,7 +384,8 @@ module.exports = {
   getVersion,
   createGenesisBlock,
   replaceChain,
-  BlockHeader,
+  // BlockHeader,
   Block,
   blockchainInit,
+  getAccountBalance,
 }; //내보내주는거

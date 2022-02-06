@@ -125,8 +125,8 @@ function responseAllChainMsg() {
 // 상대가 보내준 마지막 블록 or 블록체인 전체를 내 블록체인과 비교하여 답장하기
 function handleBlockChainResponse(message) {
   const { getLastBlock } = require("./r_blockchain");
-  const { createHash } = require("./r_blockchain");
-  const { addBlock } = require("./r_checkValidBlock");
+  const { createHash, addBlock } = require("./r_blockchain");
+  // const { addBlock } = require("./r_checkValidBlock");
   const { replaceChain } = require("./r_blockchain");
 
   // 메시지로 받은 객체 {타입, 블록} 에서 블록을 receiveBlocks에 담기
@@ -140,7 +140,7 @@ function handleBlockChainResponse(message) {
   }
   // 메시지로 받은 블록체인에서 마지막 블록을 변수에 담음
   const latestReceiveBlock = receiveBlocks[receiveBlocks.length - 1];
-  const { isValidBlockStructure } = require("./r_checkValidBlock");
+  const { isValidBlockStructure } = require("./r_blockchain");
   if (!isValidBlockStructure(latestReceiveBlock)) {
     console.log("block structuture not valid");
     return;
