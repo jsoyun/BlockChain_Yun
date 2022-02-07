@@ -63,6 +63,8 @@ function useInterval(callback, delay) {
 export default function AppWeeklySales() {
   const [blockData, setblockData] = useState('');
   const [chainBlocks, setChainBlocks] = useState([]);
+  //거래하는 코드추가
+  // const [sendTx, setSendTx] = useState([]);
 
   const addPeers = async () => {
     await axios
@@ -71,7 +73,7 @@ export default function AppWeeklySales() {
   };
 
   const connectToHttp = async () => {
-    await axios.get(`http://localhost:3001/Blocks`).then((req) => setChainBlocks(req.data));
+    await axios.get(`http://localhost:3001/blocks`).then((req) => setChainBlocks(req.data));
   };
   const blockMaker = async () => {
     const data = blockData;
@@ -81,6 +83,13 @@ export default function AppWeeklySales() {
     await axios
       .post(`http://localhost:3001/mineBlock`, { data: [data] })
       .then((req) => alert('블록이 생성되었습니다'));
+  };
+
+  const sendTxs = async () => {
+    const data = blockData;
+    await axios
+      .post(`http://localhost:3001/sendTransaction`, { data: [data] })
+      .then((req) => alert('거래~~~~'));
   };
 
   const [count, setCount] = useState(0);
@@ -109,6 +118,7 @@ export default function AppWeeklySales() {
         <Button onClick={connectToHttp}>START TO MINEBLOCK</Button>
         {/* <div>{JSON.stringify(blockData)}</div> */}
         <Button onClick={addPeers}>ADD PEERS</Button>
+        <Button onClick={sendTxs}>거래sendTX</Button>
       </Grid>
 
       <Input
@@ -123,15 +133,17 @@ export default function AppWeeklySales() {
       {/* <div>{JSON.stringify(blockData)}</div> */}
       {chainBlocks &&
         chainBlocks.map((a) => (
-          <div style={marginBottom} key={a.header.index}>
-            <div>바디 : {a.body}</div>
-            <div>인덱스 : {a.header.index}</div>
-            <div>넌스 : {a.header.nonce}</div>
-            <div>버전 : {a.header.version}</div>
-            <div>시간 : {a.header.timestamp}</div>
-            <div>난이도 : {a.header.difficulty}</div>
-            <div>머클 루트 : {a.header.merkleRoot}</div>
-            <div>이전 해쉬 : {a.header.previousHash}</div>
+          <div style={marginBottom} key={a.index}>
+            {/* <div>바디 : {a.body}</div> */}
+
+            <div>아이디 : {a.data.map((b) => b.id)}</div>
+            <div>인덱스 : {a.index}</div>
+            <div>넌스 : {a.nonce}</div>
+            {/* <div>버전 : {a.version}</div> */}
+            <div>시간 : {a.timestamp}</div>
+            <div>난이도 : {a.difficulty}</div>
+            {/* <div>머클 루트 : {a.merkleRoot}</div> */}
+            <div>이전 해쉬 : {a.previousHash}</div>
           </div>
         ))}
     </Grid>
