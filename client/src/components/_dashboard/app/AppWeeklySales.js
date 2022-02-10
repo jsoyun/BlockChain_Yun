@@ -85,12 +85,12 @@ export default function AppWeeklySales() {
       .then((req) => alert('블록이 생성되었습니다'));
   };
 
-  const sendTxs = async () => {
-    const data = blockData;
-    await axios
-      .post(`http://localhost:3001/sendTransaction`, { data: [data] })
-      .then((req) => alert('거래~~~~'));
-  };
+  // const sendTxs = async () => {
+  //   const data = blockData;
+  //   await axios
+  //     .post(`http://localhost:3001/sendTransaction`, { data: [data] })
+  //     .then((req) => alert('거래~~~~'));
+  // };
 
   const [count, setCount] = useState(0);
   const [delay, setDelay] = useState(1000);
@@ -118,7 +118,7 @@ export default function AppWeeklySales() {
         <Button onClick={connectToHttp}>START TO MINEBLOCK</Button>
         {/* <div>{JSON.stringify(blockData)}</div> */}
         <Button onClick={addPeers}>ADD PEERS</Button>
-        <Button onClick={sendTxs}>거래sendTX</Button>
+        {/* <Button onClick={sendTxs}>거래sendTX</Button> */}
       </Grid>
 
       <Input
